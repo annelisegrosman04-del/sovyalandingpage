@@ -1,0 +1,854 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sovya — Building without the blindfolds.</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;700;800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" />
+
+  <style>
+    :root {
+      --canvas: #FFFFFF;
+      --canvas-warm: #F5F1EA;
+      --ink: #1A1C2E;
+      --ink-2: #6B6760;
+      --surface: #FFFFFF;
+      --amber: #E8873A;
+      --amber-soft: #F0975A;
+      --amber-deep: #D27425;
+      --on-amber: #FFF6EC;
+      --hairline: rgba(26, 28, 46, 0.10);
+      --hairline-strong: rgba(26, 28, 46, 0.22);
+      --font-display: "Hanken Grotesk", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      --font-body: "DM Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      --radius-input: 14px;
+      --radius-panel: 28px;
+      --radius-btn: 12px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--canvas);
+      color: var(--ink);
+      font-family: var(--font-body);
+      font-weight: 400;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    button { font-family: inherit; }
+    input { font-family: inherit; }
+    a { color: inherit; }
+
+    /* ─── Page shell ────────────────────────────────────────────────────── */
+    .page {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr auto auto;
+      padding: 28px clamp(28px, 5vw, 80px) 0;
+      max-width: 1480px;
+      margin: 0 auto;
+      opacity: 0;
+      transition: opacity 600ms ease;
+    }
+    .page.is-mounted { opacity: 1; }
+
+    /* ─── Wordmark ──────────────────────────────────────────────────────── */
+    .wordmark {
+      font-family: var(--font-display);
+      font-weight: 900;
+      letter-spacing: -0.045em;
+      color: var(--ink);
+      line-height: 1;
+      display: inline-flex;
+      align-items: baseline;
+    }
+    .wordmark .dot {
+      color: var(--amber);
+      margin-left: 0.01em;
+    }
+
+    /* ─── Topbar ────────────────────────────────────────────────────────── */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: clamp(56px, 8vw, 112px);
+    }
+    .topbar-pill {
+      font-size: 13px;
+      color: var(--ink-2);
+      letter-spacing: 0.02em;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px 8px 12px;
+      border: 1px dotted var(--hairline-strong);
+      border-radius: 999px;
+      background: var(--canvas);
+    }
+    .topbar-pill-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #4a9d6c;
+      box-shadow: 0 0 0 3px rgba(74, 157, 108, 0.18);
+      display: inline-block;
+    }
+
+    /* ─── Hero ──────────────────────────────────────────────────────────── */
+    .hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 28px;
+      padding-bottom: clamp(56px, 8vw, 104px);
+      max-width: 1280px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-2);
+      font-weight: 500;
+      font-family: var(--font-body);
+    }
+    .eyebrow-rule {
+      width: 28px;
+      height: 1px;
+      background: var(--ink);
+      opacity: 0.5;
+      display: inline-block;
+    }
+
+    .hero-headline {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: clamp(56px, 10.4vw, 160px);
+      line-height: 1.0;
+      letter-spacing: -0.05em;
+      margin: 0;
+      color: var(--ink);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-wrap: balance;
+    }
+    .hero-line {
+      display: block;
+      font-family: "DM Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      opacity: 0;
+      transform: translateY(14px);
+      animation: line-in 800ms cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+    }
+    .hero-line.line-1 { animation-delay: 80ms; }
+    .hero-line.line-2 { animation-delay: 200ms; }
+    .hero-line.line-3 { animation-delay: 320ms; }
+    .dot-accent { color: rgb(255, 129, 44); }
+
+    @keyframes line-in {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero-sub {
+      font-size: clamp(16px, 1.3vw, 20px);
+      line-height: 1.5;
+      color: rgb(0, 0, 0);
+      max-width: 58ch;
+      margin: 4px auto 0;
+      opacity: 0;
+      animation: fade-in 700ms ease 480ms forwards;
+    }
+
+    @keyframes fade-in { to { opacity: 1; } }
+
+    /* ─── Panels ────────────────────────────────────────────────────────── */
+    .panels {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(20px, 2.4vw, 32px);
+      padding-bottom: clamp(56px, 7vw, 96px);
+      max-width: 1280px;
+      margin: 0 auto;
+      width: 100%;
+      opacity: 0;
+      animation: fade-in 700ms ease 560ms forwards;
+    }
+    .layout-stacked .panels { grid-template-columns: 1fr; }
+
+    .panel {
+      background: rgb(255, 129, 44);
+      color: var(--ink);
+      border-radius: var(--radius-panel);
+      padding: clamp(32px, 3.6vw, 56px);
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 400ms cubic-bezier(0.2, 0.7, 0.2, 1);
+    }
+
+    /* subtle texture so the two amber panels read distinct */
+    .panel::after {
+      content: "";
+      position: absolute;
+      inset: auto -10% -40% auto;
+      width: 320px; height: 320px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,0.18), rgba(255,255,255,0) 60%);
+      pointer-events: none;
+    }
+
+    .panel-label {
+      font-size: 12px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ink);
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      opacity: 0.85;
+    }
+    .panel-dot {
+      width: 6px; height: 6px;
+      background: var(--ink);
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .panel-heading {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: clamp(34px, 3.6vw, 54px);
+      line-height: 0.95;
+      letter-spacing: -0.045em;
+      margin: 0;
+      color: var(--ink);
+      display: flex;
+      flex-direction: column;
+    }
+    .panel-heading span:first-child {
+      font-family: "Hanken Grotesk", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    }
+    .panel-heading-em { display: block; }
+
+    .panel-blurb {
+      font-size: 16px;
+      line-height: 1.5;
+      color: var(--ink);
+      opacity: 0.75;
+      margin: 0;
+      max-width: 38ch;
+    }
+
+    /* ─── Form ──────────────────────────────────────────────────────────── */
+    .panel-form {
+      margin-top: auto;
+      padding-top: 8px;
+      max-width: 520px;
+      width: 100%;
+    }
+
+    .field {
+      display: flex;
+      align-items: stretch;
+      background: var(--surface);
+      border: 1px solid transparent;
+      border-radius: var(--radius-input);
+      transition: box-shadow 180ms ease, border-color 180ms ease;
+      overflow: hidden;
+      padding: 6px;
+      gap: 6px;
+    }
+    .field:focus-within {
+      box-shadow: 0 0 0 3px rgba(26, 28, 46, 0.18);
+    }
+    .field.field-error {
+      border-color: #7a1f0d;
+      box-shadow: 0 0 0 3px rgba(122, 31, 13, 0.18);
+    }
+
+    .field input {
+      flex: 1;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      padding: 12px 14px;
+      font-size: 16px;
+      color: var(--ink);
+      min-width: 0;
+      border-radius: calc(var(--radius-input) - 6px);
+    }
+    .field input::placeholder { color: #a8a59c; }
+    .field input:disabled { opacity: 0.6; }
+
+    .btn {
+      appearance: none;
+      border: 0;
+      background: var(--ink);
+      color: var(--canvas);
+      padding: 0 22px;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.005em;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      transition: background 200ms ease, color 200ms ease, transform 200ms ease;
+      border-radius: var(--radius-btn);
+      white-space: nowrap;
+      height: 44px;
+    }
+    .btn:hover:not(:disabled) { background: var(--amber-deep); color: var(--on-amber); }
+    .btn:disabled { opacity: 0.7; cursor: default; }
+    .btn-arrow {
+      display: inline-block;
+      transition: transform 250ms cubic-bezier(0.2, 0.7, 0.2, 1);
+    }
+    .btn:hover:not(:disabled) .btn-arrow { transform: translateX(4px); }
+
+    .form-msg {
+      font-size: 13px;
+      color: var(--ink);
+      opacity: 0.75;
+      margin-top: 12px;
+      min-height: 1.2em;
+      transition: color 180ms ease;
+      padding-left: 4px;
+    }
+    .form-msg.is-error { color: #4a0f00; opacity: 1; font-weight: 500; }
+
+    /* ─── Success state ─────────────────────────────────────────────────── */
+    .success {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 18px 18px;
+      border-radius: var(--radius-input);
+      background: var(--surface);
+      margin-top: auto;
+      max-width: 520px;
+      animation: success-in 400ms cubic-bezier(0.2, 0.7, 0.2, 1);
+    }
+    @keyframes success-in {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .success-check {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: var(--ink);
+      color: var(--canvas);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .success-check svg { width: 18px; height: 18px; }
+    .success-title {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 18px;
+      letter-spacing: -0.025em;
+      color: var(--ink);
+    }
+    .success-sub {
+      font-size: 14px;
+      color: var(--ink-2);
+      margin-top: 4px;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+
+    /* ─── Footer ────────────────────────────────────────────────────────── */
+    .footer {
+      border-top: 1px solid var(--hairline);
+      padding: 24px 0 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: var(--ink-2);
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .footer-left {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .footer-sep { opacity: 0.5; }
+    .footer-right {
+      display: inline-flex;
+      gap: 22px;
+    }
+    .footer-right a {
+      text-decoration: none;
+      transition: color 180ms ease;
+    }
+    .footer-right a:hover { color: var(--ink); }
+
+    /* ─── Responsive ────────────────────────────────────────────────────── */
+    @media (max-width: 880px) {
+      .page { padding: 22px 22px 0; }
+      .topbar { padding-bottom: 48px; }
+      .hero-headline { font-size: clamp(48px, 13vw, 96px); }
+      .panels {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+      .footer { flex-direction: column; align-items: flex-start; gap: 12px; }
+    }
+
+    @media (max-width: 520px) {
+      .field { flex-direction: column; padding: 8px; gap: 8px; }
+      .btn { width: 100%; justify-content: space-between; }
+      .topbar-pill { font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel">
+    /* ── Tweaks panel (simplified, no host protocol needed in standalone) ── */
+    const { useState, useEffect, useRef, useCallback, useMemo } = React;
+
+    const __TWEAKS_STYLE = `
+      .twk-panel{position:fixed;right:16px;bottom:16px;z-index:2147483646;width:280px;
+        max-height:calc(100vh - 32px);display:flex;flex-direction:column;
+        background:rgba(250,249,247,.78);color:#29261b;
+        -webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%);
+        border:.5px solid rgba(255,255,255,.6);border-radius:14px;
+        box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 12px 40px rgba(0,0,0,.18);
+        font:11.5px/1.4 ui-sans-serif,system-ui,-apple-system,sans-serif;overflow:hidden}
+      .twk-hd{display:flex;align-items:center;justify-content:space-between;
+        padding:10px 8px 10px 14px;cursor:move;user-select:none}
+      .twk-hd b{font-size:12px;font-weight:600;letter-spacing:.01em}
+      .twk-x{appearance:none;border:0;background:transparent;color:rgba(41,38,27,.55);
+        width:22px;height:22px;border-radius:6px;cursor:default;font-size:13px;line-height:1}
+      .twk-x:hover{background:rgba(0,0,0,.06);color:#29261b}
+      .twk-body{padding:2px 14px 14px;display:flex;flex-direction:column;gap:10px;
+        overflow-y:auto;overflow-x:hidden;min-height:0;
+        scrollbar-width:thin;scrollbar-color:rgba(0,0,0,.15) transparent}
+      .twk-row{display:flex;flex-direction:column;gap:5px}
+      .twk-row-h{flex-direction:row;align-items:center;justify-content:space-between;gap:10px}
+      .twk-lbl{display:flex;justify-content:space-between;align-items:baseline;
+        color:rgba(41,38,27,.72)}
+      .twk-lbl>span:first-child{font-weight:500}
+      .twk-sect{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+        color:rgba(41,38,27,.45);padding:10px 0 0}
+      .twk-sect:first-child{padding-top:0}
+      .twk-field{appearance:none;width:100%;height:26px;padding:0 8px;
+        border:.5px solid rgba(0,0,0,.1);border-radius:7px;
+        background:rgba(255,255,255,.6);color:inherit;font:inherit;outline:none}
+      .twk-field:focus{border-color:rgba(0,0,0,.25);background:rgba(255,255,255,.85)}
+      select.twk-field{padding-right:22px;
+        background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='rgba(0,0,0,.5)' d='M0 0h10L5 6z'/></svg>");
+        background-repeat:no-repeat;background-position:right 8px center}
+      .twk-seg{position:relative;display:flex;padding:2px;border-radius:8px;
+        background:rgba(0,0,0,.06);user-select:none}
+      .twk-seg-thumb{position:absolute;top:2px;bottom:2px;border-radius:6px;
+        background:rgba(255,255,255,.9);box-shadow:0 1px 2px rgba(0,0,0,.12);
+        transition:left .15s cubic-bezier(.3,.7,.4,1),width .15s}
+      .twk-seg button{appearance:none;position:relative;z-index:1;flex:1;border:0;
+        background:transparent;color:inherit;font:inherit;font-weight:500;min-height:22px;
+        border-radius:6px;cursor:default;padding:4px 6px;line-height:1.2}
+      .twk-toggle-open{position:fixed;right:16px;bottom:16px;z-index:2147483645;
+        appearance:none;border:0;background:rgba(26,28,46,.88);color:#fff;
+        font:500 12px/1 ui-sans-serif,system-ui,sans-serif;
+        padding:8px 14px;border-radius:999px;cursor:default;
+        box-shadow:0 2px 8px rgba(0,0,0,.25)}
+      .twk-toggle-open:hover{background:rgba(26,28,46,1)}
+    `;
+
+    function useTweaks(defaults) {
+      const [values, setValues] = useState(defaults);
+      const setTweak = useCallback((keyOrEdits, val) => {
+        const edits = typeof keyOrEdits === 'object' && keyOrEdits !== null
+          ? keyOrEdits : { [keyOrEdits]: val };
+        setValues((prev) => ({ ...prev, ...edits }));
+      }, []);
+      return [values, setTweak];
+    }
+
+    function TweaksPanel({ title = 'Tweaks', children }) {
+      const [open, setOpen] = useState(false);
+      const dragRef = useRef(null);
+      const offsetRef = useRef({ x: 16, y: 16 });
+      const PAD = 16;
+
+      const clampToViewport = useCallback(() => {
+        const panel = dragRef.current;
+        if (!panel) return;
+        const w = panel.offsetWidth, h = panel.offsetHeight;
+        const maxRight = Math.max(PAD, window.innerWidth - w - PAD);
+        const maxBottom = Math.max(PAD, window.innerHeight - h - PAD);
+        offsetRef.current = {
+          x: Math.min(maxRight, Math.max(PAD, offsetRef.current.x)),
+          y: Math.min(maxBottom, Math.max(PAD, offsetRef.current.y)),
+        };
+        panel.style.right = offsetRef.current.x + 'px';
+        panel.style.bottom = offsetRef.current.y + 'px';
+      }, []);
+
+      useEffect(() => {
+        if (!open) return;
+        clampToViewport();
+        window.addEventListener('resize', clampToViewport);
+        return () => window.removeEventListener('resize', clampToViewport);
+      }, [open, clampToViewport]);
+
+      const onDragStart = (e) => {
+        const panel = dragRef.current;
+        if (!panel) return;
+        const r = panel.getBoundingClientRect();
+        const sx = e.clientX, sy = e.clientY;
+        const startRight = window.innerWidth - r.right;
+        const startBottom = window.innerHeight - r.bottom;
+        const move = (ev) => {
+          offsetRef.current = {
+            x: startRight - (ev.clientX - sx),
+            y: startBottom - (ev.clientY - sy),
+          };
+          clampToViewport();
+        };
+        const up = () => {
+          window.removeEventListener('mousemove', move);
+          window.removeEventListener('mouseup', up);
+        };
+        window.addEventListener('mousemove', move);
+        window.addEventListener('mouseup', up);
+      };
+
+      return (
+        <>
+          <style>{__TWEAKS_STYLE}</style>
+          {!open && (
+            <button className="twk-toggle-open" onClick={() => setOpen(true)}>
+              Tweaks
+            </button>
+          )}
+          {open && (
+            <div ref={dragRef} className="twk-panel"
+                 style={{ right: offsetRef.current.x, bottom: offsetRef.current.y }}>
+              <div className="twk-hd" onMouseDown={onDragStart}>
+                <b>{title}</b>
+                <button className="twk-x" aria-label="Close tweaks"
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onClick={() => setOpen(false)}>✕</button>
+              </div>
+              <div className="twk-body">{children}</div>
+            </div>
+          )}
+        </>
+      );
+    }
+
+    function TweakSection({ title, children }) {
+      return (
+        <>
+          <div className="twk-sect">{title}</div>
+          {children}
+        </>
+      );
+    }
+
+    function TweakRow({ label, children }) {
+      return (
+        <div className="twk-row">
+          <div className="twk-lbl"><span>{label}</span></div>
+          {children}
+        </div>
+      );
+    }
+
+    function TweakSelect({ label, value, options, onChange }) {
+      return (
+        <TweakRow label={label}>
+          <select className="twk-field" value={value} onChange={(e) => onChange(e.target.value)}>
+            {options.map((o) => {
+              const v = typeof o === 'object' ? o.value : o;
+              const l = typeof o === 'object' ? o.label : o;
+              return <option key={v} value={v}>{l}</option>;
+            })}
+          </select>
+        </TweakRow>
+      );
+    }
+
+    function TweakRadio({ label, value, options, onChange }) {
+      const trackRef = useRef(null);
+      const [dragging, setDragging] = useState(false);
+      const valueRef = useRef(value);
+      valueRef.current = value;
+      const opts = options.map((o) => (typeof o === 'object' ? o : { value: o, label: o }));
+      const idx = Math.max(0, opts.findIndex((o) => o.value === value));
+      const n = opts.length;
+
+      const segAt = (clientX) => {
+        const r = trackRef.current.getBoundingClientRect();
+        const inner = r.width - 4;
+        const i = Math.floor(((clientX - r.left - 2) / inner) * n);
+        return opts[Math.max(0, Math.min(n - 1, i))].value;
+      };
+
+      const onPointerDown = (e) => {
+        setDragging(true);
+        const v0 = segAt(e.clientX);
+        if (v0 !== valueRef.current) onChange(v0);
+        const move = (ev) => {
+          if (!trackRef.current) return;
+          const v = segAt(ev.clientX);
+          if (v !== valueRef.current) onChange(v);
+        };
+        const up = () => {
+          setDragging(false);
+          window.removeEventListener('pointermove', move);
+          window.removeEventListener('pointerup', up);
+        };
+        window.addEventListener('pointermove', move);
+        window.addEventListener('pointerup', up);
+      };
+
+      return (
+        <TweakRow label={label}>
+          <div ref={trackRef} role="radiogroup" onPointerDown={onPointerDown}
+               className={dragging ? 'twk-seg dragging' : 'twk-seg'}>
+            <div className="twk-seg-thumb"
+                 style={{ left: `calc(2px + ${idx} * (100% - 4px) / ${n})`,
+                          width: `calc((100% - 4px) / ${n})` }} />
+            {opts.map((o) => (
+              <button key={o.value} type="button" role="radio" aria-checked={o.value === value}>
+                {o.label}
+              </button>
+            ))}
+          </div>
+        </TweakRow>
+      );
+    }
+
+    /* ── App ──────────────────────────────────────────────────────────────── */
+
+    const TWEAK_DEFAULTS = {
+      "headline": "blindfolds",
+      "layout": "split"
+    };
+
+    const HEADLINES = {
+      blindfolds: {
+        line1: "Building",
+        line2: "without the",
+        line3: "blindfolds.",
+        sub: "Residential construction runs on phone calls, half-truths and crossed fingers. Sovya gives builders and homeowners one shared source of truth, from contract to keys."
+      },
+      guesswork: {
+        line1: "The build",
+        line2: "shouldn't be",
+        line3: "a guessing game.",
+        sub: "Sovya is the communication layer for Australian residential construction — so the people paying for the build, and the people on the tools, finally see the same thing."
+      },
+      clarity: {
+        line1: "Clarity is",
+        line2: "the new",
+        line3: "contract.",
+        sub: "We're rebuilding how Australian home builds get communicated. Less chasing. Less re-explaining. One record everyone trusts."
+      }
+    };
+
+    function Wordmark({ size = 28 }) {
+      return (
+        <div className="wordmark" style={{ fontSize: size }}>
+          <span>sovya</span><span className="dot">.</span>
+        </div>
+      );
+    }
+
+    function validateEmail(s) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
+    }
+
+    function SignupPanel({ kind, label, headingTop, headingBottom, blurb }) {
+      const [email, setEmail] = useState("");
+      const [status, setStatus] = useState("idle");
+      const [error, setError] = useState("");
+
+      const onSubmit = (e) => {
+        e.preventDefault();
+        if (status === "submitting" || status === "success") return;
+        if (!email.trim()) { setStatus("error"); setError("We'll be sharing launch updates as we build"); return; }
+        if (!validateEmail(email)) { setStatus("error"); setError("That email doesn't look right."); return; }
+        setStatus("submitting"); setError("");
+        setTimeout(() => setStatus("success"), 700);
+      };
+
+      return (
+        <div className={`panel panel-${kind}`} style={{ backgroundColor: "rgb(255, 129, 44)" }}>
+          <div className="panel-label">
+            <span className="panel-dot" aria-hidden="true"></span>
+            {label}
+          </div>
+          <h2 className="panel-heading">
+            <span style={{ fontFamily: '"Hanken Grotesk"' }}>{headingTop}</span>
+            <span className="panel-heading-em">{headingBottom}</span>
+          </h2>
+          <p className="panel-blurb">{blurb}</p>
+
+          {status !== "success" ? (
+            <form className="panel-form" onSubmit={onSubmit} noValidate>
+              <div className={`field ${status === "error" ? "field-error" : ""}`}>
+                <input
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => { setEmail(e.target.value); if (status === "error") setStatus("idle"); }}
+                  aria-label={`Email for ${label}`}
+                  disabled={status === "submitting"}
+                />
+                <button type="submit" className="btn" disabled={status === "submitting"}>
+                  <span className="btn-label">{status === "submitting" ? "Sending…" : "Keep me in the loop"}</span>
+                  <span className="btn-arrow" aria-hidden="true">→</span>
+                </button>
+              </div>
+              <div className={`form-msg ${status === "error" ? "is-error" : ""}`}>
+                {status === "error" ? error : "We'll only email you about the launch. No noise."}
+              </div>
+            </form>
+          ) : (
+            <div className="success">
+              <div className="success-check" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 12.5l5 5L20 6.5" />
+                </svg>
+              </div>
+              <div className="success-text">
+                <div className="success-title">You're on the list.</div>
+                <div className="success-sub">We'll be in touch from a real human at <strong>{email}</strong>.</div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    function App() {
+      const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+      const headline = HEADLINES[t.headline] || HEADLINES.blindfolds;
+
+      const [mounted, setMounted] = useState(false);
+      useEffect(() => {
+        const id = requestAnimationFrame(() => setMounted(true));
+        return () => cancelAnimationFrame(id);
+      }, []);
+
+      return (
+        <div className={`page ${mounted ? "is-mounted" : ""} layout-${t.layout}`}>
+          <header className="topbar">
+            <Wordmark size={28} />
+            <div className="topbar-right">
+              <span className="topbar-pill" style={{ borderStyle: "dotted" }}>
+                <span className="topbar-pill-dot" />
+                Early access · Sydney, AU
+              </span>
+            </div>
+          </header>
+
+          <main className="hero">
+            <div className="hero-eyebrow">
+              <span className="eyebrow-rule" />
+              <span style={{ fontFamily: '"DM Sans"' }}>A communication layer for residential construction</span>
+              <span className="eyebrow-rule" />
+            </div>
+
+            <h1 className="hero-headline" key={t.headline}>
+              <span className="hero-line line-1">{headline.line1}</span>
+              <span className="hero-line line-2">{headline.line2}</span>
+              <span className="hero-line line-3">
+                {headline.line3.replace(/\.$/, "")}<span className="dot-accent" style={{ borderRadius: "20px" }}>.</span>
+              </span>
+            </h1>
+
+            <p className="hero-sub" style={{ color: "rgb(0, 0, 0)" }}>{headline.sub}</p>
+          </main>
+
+          <section className={`panels ${t.layout === "stacked" ? "panels-stacked" : ""}`}
+                   style={t.layout === "stacked" ? { gridTemplateColumns: "1fr" } : {}}>
+            <SignupPanel
+              kind="builder"
+              label="Builder early access"
+              headingTop="I'm a"
+              headingBottom="builder."
+              blurb="Stop being the message-relay. Give your clients real visibility — and get your evenings back."
+            />
+            <SignupPanel
+              kind="homeowner"
+              label="Homeowner early access"
+              headingTop="I'm a"
+              headingBottom="homeowner."
+              blurb="See what's actually happening on your build — without chasing your builder for a status update."
+            />
+          </section>
+
+          <footer className="footer">
+            <div className="footer-left">
+              <Wordmark size={18} />
+              <span className="footer-sep">·</span>
+              <span>© 2026 Sovya Pty Ltd</span>
+            </div>
+            <div className="footer-right">
+              <a href="#privacy">Privacy</a>
+              <a href="#terms">Terms</a>
+              <a href="mailto:info@sovyaapp.com">info@sovyaapp.com</a>
+            </div>
+          </footer>
+
+          <TweaksPanel title="Tweaks">
+            <TweakSection title="Headline">
+              <TweakSelect
+                label="Statement"
+                value={t.headline}
+                onChange={(v) => setTweak("headline", v)}
+                options={[
+                  { value: "blindfolds", label: "Building without the blindfolds." },
+                  { value: "guesswork", label: "The build shouldn't be a guessing game." },
+                  { value: "clarity", label: "Clarity is the new contract." }
+                ]}
+              />
+            </TweakSection>
+            <TweakSection title="Composition">
+              <TweakRadio
+                label="Panel layout"
+                value={t.layout}
+                onChange={(v) => setTweak("layout", v)}
+                options={[
+                  { value: "split", label: "Side by side" },
+                  { value: "stacked", label: "Stacked" }
+                ]}
+              />
+            </TweakSection>
+          </TweaksPanel>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
